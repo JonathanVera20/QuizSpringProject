@@ -1,0 +1,32 @@
+{"properties": [
+  {
+    "name": "webclient.base-url",
+    "type": "java.lang.String",
+    "description": "A description for 'webclient.base-url'"
+  },
+  {
+    "name": "webclient.default-headers.content-type",
+    "type": "java.lang.String",
+    "description": "A description for 'webclient.default-headers.content-type'"
+  },
+  {
+    "name": "webclient.default-headers.authorization",
+    "type": "java.lang.String",
+    "description": "A description for 'webclient.default-headers.authorization'"
+  },
+  {
+    "name": "setx",
+    "type": "java.lang.String",
+    "description": "A description for 'setx'"
+  },
+  {
+    "name": "jwt.secret",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.secret'"
+  },
+  {
+    "name": "jwt.expiration",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.expiration'"
+  }
+]}

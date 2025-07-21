@@ -45,45 +45,45 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable()) // Documented: API uses JWT tokens, CSRF not needed for stateless REST API
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // Security Headers for production
+                .headers(headers -> headers
+                    .frameOptions().deny() // Prevent clickjacking
+                    .contentTypeOptions().and() // Prevent MIME type sniffing
+                    .httpStrictTransportSecurity(hstsConfig -> hstsConfig
+                        .maxAgeInSeconds(31536000) // 1 year
+                        .includeSubDomains(true)
+                    )
+                    .referrerPolicy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                )
                 .authorizeHttpRequests(auth -> {
                     System.out.println("Configuring authorization rules...");
                     auth
                             // Public endpoints
                             .requestMatchers("/api/auth/**").permitAll()
-                            .requestMatchers("/api/test/public").permitAll()
+                            .requestMatchers("/api/health/**").permitAll()
+                            .requestMatchers("/api/test/**").permitAll()
+                            .requestMatchers("/actuator/**").permitAll()
                             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                            // Admin only endpoints
-                            .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.POST, "/api/quizzes").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.PUT, "/api/quizzes/**").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.DELETE, "/api/quizzes/**").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.POST, "/api/questions").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.PUT, "/api/questions/**").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.DELETE, "/api/questions/**").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.POST, "/api/answers").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.PUT, "/api/answers/**").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.DELETE, "/api/answers/**").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.POST, "/api/stories").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.PUT, "/api/stories/**").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.DELETE, "/api/stories/**").hasRole("ADMIN")
-                            // All other endpoints require authentication
+                            // DEBUG: Add explicit matcher for the exact endpoint
+                            .requestMatchers("/api/test/public").permitAll()
+                            // All other requests require authentication
                             .anyRequest().authenticated();
                 })
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exceptions -> exceptions
+                .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .exceptionHandling(exception -> exception
                 .authenticationEntryPoint((request, response, authException) -> {
-                    System.out.println("Authentication exception: " + authException.getMessage());
-                    response.setStatus(401);
+                    System.out.println("AuthenticationEntryPoint triggered for: " + request.getRequestURI());
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
                     response.setContentType("application/json");
-                    response.getWriter().write("{\"error\":\"Unauthorized access\"}");
+                    response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    System.out.println("Access denied: " + accessDeniedException.getMessage());
-                    response.setStatus(403);
+                    System.out.println("AccessDeniedHandler triggered for: " + request.getRequestURI());
+                    response.setStatus(HttpStatus.FORBIDDEN.value());
                     response.setContentType("application/json");
-                    response.getWriter().write("{\"error\":\"Access denied\"}");
+                    response.getWriter().write("{\"error\":\"Forbidden\",\"message\":\"Access denied\"}");
                 })
                 )
                 .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -92,9 +92,11 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authManager(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
-        AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-        authenticationManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
-        return authenticationManagerBuilder.build();
+        return http.getSharedObject(AuthenticationManagerBuilder.class)
+                .userDetailsService(userDetailsService)
+                .passwordEncoder(passwordEncoder())
+                .and()
+                .build();
     }
 
     @Bean
@@ -113,7 +115,7 @@ public class SecurityConfig {
             // Fallback for development
             configuration.setAllowedOriginPatterns(List.of(
                     "http://localhost:3000",
-                    "http://localhost:4200",
+                    "http://localhost:4200", 
                     "http://localhost:8080",
                     "http://127.0.0.1:*"
             ));
@@ -121,20 +123,20 @@ public class SecurityConfig {
 
         // Restrict HTTP methods to only what's needed
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
+        
         // Restrict headers to necessary ones
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
+                "X-Requested-With",
                 "Accept",
-                "X-Requested-With"
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"
         ));
-
-        // Security: Don't allow credentials for enhanced security
-        configuration.setAllowCredentials(false);
-
-        // Cache preflight requests for performance
-        configuration.setMaxAge(3600L);
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // 1 hour
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

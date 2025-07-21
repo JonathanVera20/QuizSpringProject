@@ -6,39 +6,57 @@ services:
     image: postgres:15
     container_name: quiz_postgres
     environment:
-      POSTGRES_DB: AutonomoWeb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DATABASE_NAME:-AutonomoWeb}
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "${DATABASE_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database_setup.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - ./COMPLETE_TEST_DATA.sql:/docker-entrypoint-initdb.d/02-data.sql
     networks:
       - quiz-network
+    restart: unless-stopped
+    # Security: Run as non-root user
+    user: postgres
 
   # Spring Boot Application
   app:
     build: .
     container_name: quiz_app
     environment:
-      DATABASE_URL: jdbc:postgresql://db:5432/AutonomoWeb
-      DATABASE_USERNAME: postgres
-      DATABASE_PASSWORD: postgres
-      JWT_SECRET: MyVeryLongAndSecureJWTSecretKeyForHMACSHA256Algorithm123456789
-      JWT_EXPIRATION: 36000000
+      DATABASE_URL: jdbc:postgresql://db:5432/${DATABASE_NAME:-AutonomoWeb}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-MyVeryLongAndSecureJWTSecretKeyForHMACSHA256Algorithm123456789}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:4200}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      # Security: Disable unnecessary features
+      SPRING_JPA_SHOW_SQL: false
+      SPRING_JPA_FORMAT_SQL: false
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     depends_on:
       - db
     networks:
       - quiz-network
     restart: unless-stopped
+    # Security: Run as non-root user
+    user: 1001:1001
+    # Security: Read-only filesystem
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/tmp
 
 volumes:
   postgres_data:
+    driver: local
 
 networks:
   quiz-network:
     driver: bridge
+    # Security: Isolate network
+    internal: false

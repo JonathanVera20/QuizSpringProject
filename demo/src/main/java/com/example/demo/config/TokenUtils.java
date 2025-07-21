@@ -28,6 +28,14 @@ public class TokenUtils {
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", userDetails.getUsername());
 
+        // Add user authorities/roles to JWT for better security
+        claims.put("authorities", userDetails.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .toList());
+
+        // Add issued at claim for additional security
+        claims.put("iat", new Date(System.currentTimeMillis()));
+
         return createToken(claims, userDetails.getUsername());
     }
 

@@ -4,6 +4,13 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Security & Configuration Files ###
+*.env
+.env.*
+application-local.properties
+application-secret.properties
+application-production.properties
+
 ### STS ###
 .apt_generated
 .classpath

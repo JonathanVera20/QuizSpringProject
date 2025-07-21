@@ -23,11 +23,11 @@ public class UserService {
     private PasswordEncoder passwordEncoder; // Asegúrate de que PasswordEncoder se inyecta correctamente
 
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
+        Optional<User> userOptional = userRepository.findByUsername(username);
+        if (!userOptional.isPresent()) {
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
-        return new CustomUserDetails(user);
+        return new CustomUserDetails(userOptional.get());
     }
 
     public List<User> getAllUsers() {
@@ -73,10 +73,10 @@ public class UserService {
     }
 
     public User findByUsername(String username) {
-        return userRepository.findByUsername(username);
+        return userRepository.findByUsername(username).orElse(null);
     }
 
     public User findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmail(email).orElse(null);
     }
 }

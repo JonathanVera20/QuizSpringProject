@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,14 +42,16 @@ public class QuestionsController {
         }
     }
 
-    // POST: Crea una nueva pregunta
+    // POST: Crea una nueva pregunta (solo ADMIN)
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Questions createQuestion(@RequestBody Questions question) {
         return questionsService.createQuestion(question);
     }
 
-    // PUT: Actualiza una pregunta por su ID
+    // PUT: Actualiza una pregunta por su ID (solo ADMIN)
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Questions> updateQuestion(@PathVariable Long id, @RequestBody Questions newQuestion) {
         Questions updatedQuestion = questionsService.updateQuestion(newQuestion);
         if (updatedQuestion != null) {
@@ -58,8 +61,9 @@ public class QuestionsController {
         }
     }
 
-    // DELETE: Elimina una pregunta por su ID
+    // DELETE: Elimina una pregunta por su ID (solo ADMIN)
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteQuestion(@PathVariable Long id) {
         questionsService.deleteQuestion(id);
         return ResponseEntity.noContent().build();

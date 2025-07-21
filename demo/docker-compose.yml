@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: quiz_postgres
+    environment:
+      POSTGRES_DB: AutonomoWeb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database_setup.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./COMPLETE_TEST_DATA.sql:/docker-entrypoint-initdb.d/02-data.sql
+    networks:
+      - quiz-network
+
+  # Spring Boot Application
+  app:
+    build: .
+    container_name: quiz_app
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/AutonomoWeb
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      JWT_SECRET: MyVeryLongAndSecureJWTSecretKeyForHMACSHA256Algorithm123456789
+      JWT_EXPIRATION: 36000000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - quiz-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  quiz-network:
+    driver: bridge

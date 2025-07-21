@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +30,7 @@ public class StoryController {
     public List<Story> getAllStories() {
         return storyService.getAllStories();
     }
+
     // GET: Obtiene una historia por su ID
     @GetMapping("/{id}")
     public ResponseEntity<Story> getStoryById(@PathVariable Long id) {
@@ -40,14 +42,16 @@ public class StoryController {
         }
     }
 
-    // POST: Crea una nueva historia
+    // POST: Crea una nueva historia (solo ADMIN)
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Story createStory(@RequestBody Story story) {
         return storyService.createStory(story);
     }
 
-    // PUT: Actualiza una historia por su ID
+    // PUT: Actualiza una historia por su ID (solo ADMIN)
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Story> updateStory(@PathVariable Long id, @RequestBody Story newStory) {
         Story updatedStory = storyService.updateStory(newStory);
         if (updatedStory != null) {
@@ -57,12 +61,12 @@ public class StoryController {
         }
     }
 
-    // DELETE: Elimina una historia por su ID
+    // DELETE: Elimina una historia por su ID (solo ADMIN)
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteStory(@PathVariable Long id) {
         storyService.deleteStory(id);
         return ResponseEntity.noContent().build();
     }
 
-   
 }

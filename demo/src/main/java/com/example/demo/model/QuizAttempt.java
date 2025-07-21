@@ -1,4 +1,5 @@
 package com.example.demo.model;
+
 import java.util.Date;
 
 import jakarta.persistence.Column;
@@ -11,7 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "QuizAttempt")
+@Table(name = "quiz_attempt")
 public class QuizAttempt {
 
     @Id

@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.example.demo.model.User;
@@ -18,13 +19,13 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Devuelve una lista vacía ya que no hay roles asociados
-        return Collections.emptyList();
+        String role = user.getRole() != null ? user.getRole() : "USER";
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
     }
 
     @Override
     public String getPassword() {
-        return user.getPassword(); // Asumiendo que la contraseña ya está codificada
+        return user.getPassword();
     }
 
     @Override
@@ -49,12 +50,10 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        // Reemplazar con lógica para determinar si el usuario está habilitado
-        // Por ahora, simplemente retornamos true como un marcador de posición
         return true;
     }
 
-    public String getNombre() {
-        return user.getUsername();
+    public User getUser() {
+        return user;
     }
 }

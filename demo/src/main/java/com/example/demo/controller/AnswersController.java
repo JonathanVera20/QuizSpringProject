@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,26 +24,25 @@ public class AnswersController {
     private AnswersService answersService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Answers createAnswer(@RequestBody Answers answer) {
         return answersService.createAnswer(answer);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Answers getAnswerById(@PathVariable Long id) {
         return answersService.getAnswerById(id);
     }
 
-    @GetMapping
-    public List<Answers> getAllAnswers() {
-        return answersService.getAllAnswers();
-    }
-
     @PutMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Answers updateAnswer(@RequestBody Answers answer) {
         return answersService.updateAnswer(answer);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteAnswer(@PathVariable Long id) {
         answersService.deleteAnswer(id);
     }
@@ -50,10 +50,5 @@ public class AnswersController {
     @GetMapping("/question/{questionId}")
     public List<Answers> getAnswersByQuestionId(@PathVariable Long questionId) {
         return answersService.getAnswersByQuestionId(questionId);
-    }
-
-    @GetMapping("/correct/{isCorrect}")
-    public List<Answers> getAnswersByIsCorrect(@PathVariable Integer isCorrect) {
-        return answersService.getAnswersByIsCorrect(isCorrect);
     }
 }
